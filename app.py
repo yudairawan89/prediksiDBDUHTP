@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import folium
+from streamlit_folium import st_folium
 
 # ================================
 # LOAD MODEL & PREPROCESSOR
@@ -44,9 +46,6 @@ if uploaded_file is not None:
         prediksi_label = le.inverse_transform(prediksi)
         df['Prediksi Risiko DBD'] = prediksi_label
 
-        # ================================
-        # OUTPUT TABEL HASIL + REKOMENDASI
-        # ================================
         def rekomendasi(label):
             if label == 'Tinggi':
                 return 'Prioritaskan fogging & edukasi warga'
@@ -57,15 +56,38 @@ if uploaded_file is not None:
 
         df['Rekomendasi'] = df['Prediksi Risiko DBD'].apply(rekomendasi)
 
-        # Tampilkan hasil minimalis
-        output = df[['kecamatan', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
+        output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
         st.subheader("Hasil Prediksi dan Rekomendasi")
-        st.dataframe(output)
+        st.dataframe(output.drop(columns=['latitude', 'longitude']))
+
+        # ================================
+        # TAMPILKAN PETA WILAYAH
+        # ================================
+        st.subheader("Visualisasi Peta Risiko DBD")
+        m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
+
+        color_map = {
+            'Rendah': 'green',
+            'Sedang': 'orange',
+            'Tinggi': 'red'
+        }
+
+        for _, row in output.iterrows():
+            folium.CircleMarker(
+                location=[row['latitude'], row['longitude']],
+                radius=8,
+                popup=f"{row['kecamatan']}\nRisiko: {row['Prediksi Risiko DBD']}\n{row['Rekomendasi']}",
+                color=color_map.get(row['Prediksi Risiko DBD'], 'blue'),
+                fill=True,
+                fill_opacity=0.7
+            ).add_to(m)
+
+        st_data = st_folium(m, width=800, height=500)
 
         # Unduh hasil
-        csv = output.to_csv(index=False).encode('utf-8')
+        csv = output.drop(columns=['latitude', 'longitude']).to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Unduh Hasil Prediksi (CSV)",
             data=csv,
@@ -74,9 +96,9 @@ if uploaded_file is not None:
         )
 
     except KeyError:
-        st.error("Kolom pada file CSV tidak sesuai dengan format fitur yang dibutuhkan.")
+        st.error("Kolom pada file CSV tidak sesuai. Pastikan menyertakan kolom: kecamatan, latitude, longitude, dan fitur model.")
         st.markdown("### Kolom yang diperlukan:")
-        st.code(", ".join(fitur + ['kecamatan']))
+        st.code(", ".join(fitur + ['kecamatan', 'latitude', 'longitude']))
 
 else:
     st.info("Silakan unggah data untuk memulai prediksi.")
