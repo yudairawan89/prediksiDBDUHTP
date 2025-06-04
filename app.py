@@ -12,6 +12,24 @@ scaler = joblib.load("scaler_dbd.pkl")
 le = joblib.load("label_encoder_dbd.pkl")
 
 # ================================
+# KOORDINAT DEFAULT PER KECAMATAN
+# ================================
+kecamatan_coords = {
+    "Sukajadi": [-0.5164, 101.4234],
+    "Senapelan": [-0.5312, 101.4446],
+    "Pekanbaru Kota": [-0.5123, 101.4561],
+    "Rumbai Pesisir": [-0.4633, 101.4020],
+    "Rumbai": [-0.4648, 101.4207],
+    "Lima Puluh": [-0.5241, 101.4532],
+    "Sail": [-0.5098, 101.4512],
+    "Bukit Raya": [-0.5362, 101.4321],
+    "Marpoyan Damai": [-0.5311, 101.4605],
+    "Tenayan Raya": [-0.5443, 101.4810],
+    "Tampan": [-0.5035, 101.4222],
+    "Payung Sekaki": [-0.5200, 101.4245]
+}
+
+# ================================
 # STREAMLIT UI
 # ================================
 st.set_page_config(page_title="Prediksi Risiko DBD", layout="wide")
@@ -32,7 +50,6 @@ if uploaded_file is not None:
     st.subheader("Data yang Diupload")
     st.dataframe(df.head())
 
-    # Pastikan urutan fitur sesuai model
     fitur = [
         'jumlah_kasus_dbd', 'curah_hujan', 'jumlah_tps_liar',
         'suhu_rata_rata', 'jumlah_fogging', 'jumlah_genangan_air',
@@ -56,15 +73,15 @@ if uploaded_file is not None:
 
         df['Rekomendasi'] = df['Prediksi Risiko DBD'].apply(rekomendasi)
 
+        df['latitude'] = df['kecamatan'].map(lambda x: kecamatan_coords.get(x, [0, 0])[0])
+        df['longitude'] = df['kecamatan'].map(lambda x: kecamatan_coords.get(x, [0, 0])[1])
+
         output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
         st.subheader("Hasil Prediksi dan Rekomendasi")
         st.dataframe(output.drop(columns=['latitude', 'longitude']))
 
-        # ================================
-        # TAMPILKAN PETA WILAYAH
-        # ================================
         st.subheader("Visualisasi Peta Risiko DBD")
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
 
@@ -86,7 +103,6 @@ if uploaded_file is not None:
 
         st_data = st_folium(m, width=800, height=500)
 
-        # Unduh hasil
         csv = output.drop(columns=['latitude', 'longitude']).to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Unduh Hasil Prediksi (CSV)",
@@ -96,9 +112,9 @@ if uploaded_file is not None:
         )
 
     except KeyError:
-        st.error("Kolom pada file CSV tidak sesuai. Pastikan menyertakan kolom: kecamatan, latitude, longitude, dan fitur model.")
+        st.error("Kolom pada file CSV tidak sesuai. Pastikan menyertakan kolom: kecamatan dan fitur model.")
         st.markdown("### Kolom yang diperlukan:")
-        st.code(", ".join(fitur + ['kecamatan', 'latitude', 'longitude']))
+        st.code(", ".join(fitur + ['kecamatan']))
 
 else:
     st.info("Silakan unggah data untuk memulai prediksi.")
