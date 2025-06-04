@@ -57,11 +57,15 @@ if uploaded_file is not None:
 
         df['Rekomendasi'] = df['Prediksi Risiko DBD'].apply(rekomendasi)
 
-        st.subheader("Hasil Prediksi Risiko DBD dan Rekomendasi")
-        st.dataframe(df[['Prediksi Risiko DBD', 'Rekomendasi'] + fitur])
+        # Tampilkan hasil minimalis
+        output = df[['kecamatan', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
+        output.insert(0, 'No', range(1, len(output) + 1))
 
-        # Download hasil
-        csv = df.to_csv(index=False).encode('utf-8')
+        st.subheader("Hasil Prediksi dan Rekomendasi")
+        st.dataframe(output)
+
+        # Unduh hasil
+        csv = output.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Unduh Hasil Prediksi (CSV)",
             data=csv,
@@ -72,7 +76,7 @@ if uploaded_file is not None:
     except KeyError:
         st.error("Kolom pada file CSV tidak sesuai dengan format fitur yang dibutuhkan.")
         st.markdown("### Kolom yang diperlukan:")
-        st.code(", ".join(fitur))
+        st.code(", ".join(fitur + ['kecamatan']))
 
 else:
     st.info("Silakan unggah data untuk memulai prediksi.")
