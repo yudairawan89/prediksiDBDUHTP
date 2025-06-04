@@ -43,7 +43,7 @@ Silakan unggah data dalam format **.csv**.
 # ================================
 # UPLOAD DATA
 # ================================
-uploaded_file = st.file_uploader("Unggah file CSV", type=["csv"])
+uploaded_file = st.file_uploader("Unggah file CSV", type=["xlsx"])
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
