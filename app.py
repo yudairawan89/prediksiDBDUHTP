@@ -65,11 +65,11 @@ if uploaded_file is not None:
 
         def rekomendasi(label):
             if label == 'Tinggi':
-                return 'Prioritaskan fogging & edukasi warga'
+                return 'Lakukan fogging massal, aktifkan posko siaga DBD, dan edukasi intensif berbasis RT/RW.'
             elif label == 'Sedang':
-                return 'Pemantauan & penyuluhan ringan'
+                return 'Lakukan pemantauan wilayah rawan, penguatan edukasi sekolah dan penyuluhan warga.'
             else:
-                return 'Pertahankan kondisi dan monitoring berkala'
+                return 'Lanjutkan monitoring berkala, evaluasi lingkungan, dan edukasi ringan berbasis komunitas.'
 
         df['Rekomendasi'] = df['Prediksi Risiko DBD'].apply(rekomendasi)
 
@@ -79,8 +79,21 @@ if uploaded_file is not None:
         output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
-        st.subheader("Hasil Prediksi dan Rekomendasi")
-        st.dataframe(output.drop(columns=['latitude', 'longitude']))
+        st.subheader("Ringkasan Prediksi Risiko DBD per Kecamatan")
+        for _, row in output.iterrows():
+            with st.expander(f"{row['kecamatan']} — Risiko: {row['Prediksi Risiko DBD']}"):
+                st.markdown(f"""
+                **Rekomendasi Intervensi:**
+                {row['Rekomendasi']}
+
+                **Detail Data:**
+                - Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}
+                - Curah Hujan: {df.loc[_,'curah_hujan']} mm
+                - Suhu Rata-rata: {df.loc[_,'suhu_rata_rata']} °C
+                - Genangan Air: {df.loc[_,'jumlah_genangan_air']}
+                - Pengangguran: {df.loc[_,'pengangguran']} %
+                - Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata
+                """)
 
         st.subheader("Visualisasi Peta Risiko DBD")
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
