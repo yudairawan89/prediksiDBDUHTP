@@ -63,9 +63,8 @@ if uploaded_file is not None:
         prediksi_label = le.inverse_transform(prediksi)
         df['Prediksi Risiko DBD'] = prediksi_label
 
-        # Tampilkan tabel prediksi di bawah data upload, tanpa kolom rekomendasi
-        st.subheader("Tabel Prediksi Risiko DBD")
-        st.dataframe(df[['kecamatan', 'Prediksi Risiko DBD']])
+        # Simpan dataframe prediksi awal (tanpa kolom rekomendasi)
+        df_prediksi_only = df[['kecamatan', 'Prediksi Risiko DBD']].copy()
 
         def rekomendasi(label):
             if label == 'Tinggi':
@@ -111,6 +110,10 @@ Penguatan Komunikasi Risiko: Sediakan papan informasi risiko DBD di kantor kelur
 
         output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
+
+        # Tampilkan ulang tabel prediksi setelah perhitungan
+        st.subheader("Tabel Prediksi Risiko DBD")
+        st.dataframe(df_prediksi_only)
 
         with st.expander("Klik untuk Melihat Ringkasan Prediksi Risiko DBD per Kecamatan"):
             for _, row in output.iterrows():
