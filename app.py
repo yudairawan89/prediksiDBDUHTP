@@ -82,18 +82,20 @@ if uploaded_file is not None:
         st.subheader("Ringkasan Prediksi Risiko DBD per Kecamatan")
         for _, row in output.iterrows():
             with st.expander(f"{row['kecamatan']} — Risiko: {row['Prediksi Risiko DBD']}"):
-                st.markdown(f"""
-                **Rekomendasi Intervensi:**
-                {row['Rekomendasi']}
+                if st.button(f"Melihat Rekomendasi ({row['kecamatan']})", key=_):
+                    st.markdown(f"""
+                    **Rekomendasi Intervensi:**
+                    {row['Rekomendasi']}
 
-                **Detail Data:**
-                - Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}
-                - Curah Hujan: {df.loc[_,'curah_hujan']} mm
-                - Suhu Rata-rata: {df.loc[_,'suhu_rata_rata']} °C
-                - Genangan Air: {df.loc[_,'jumlah_genangan_air']}
-                - Pengangguran: {df.loc[_,'pengangguran']} %
-                - Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata
-                """)
+                    **Detail Data:**
+                    - Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}
+                    - Curah Hujan: {df.loc[_,'curah_hujan']} mm
+                    - Suhu Rata-rata: {df.loc[_,'suhu_rata_rata']} °C
+                    - Genangan Air: {df.loc[_,'jumlah_genangan_air']}
+                    - Pengangguran: {df.loc[_,'pengangguran']} %
+                    - Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata
+                    
+                    """)
 
         st.subheader("Visualisasi Peta Risiko DBD")
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
