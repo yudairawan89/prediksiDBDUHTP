@@ -63,6 +63,10 @@ if uploaded_file is not None:
         prediksi_label = le.inverse_transform(prediksi)
         df['Prediksi Risiko DBD'] = prediksi_label
 
+        # Tampilkan tabel prediksi di bawah data upload, tanpa kolom rekomendasi
+        st.subheader("Tabel Prediksi Risiko DBD")
+        st.dataframe(df[['kecamatan', 'Prediksi Risiko DBD']])
+
         def rekomendasi(label):
             if label == 'Tinggi':
                 return """Fogging Massal Terjadwal: Lakukan pengasapan minimal dua kali seminggu di seluruh area kecamatan dengan pengawasan oleh Dinas Kesehatan.
