@@ -20,7 +20,7 @@ kecamatan_coords = {
     "Pekanbaru Kota": [-0.5070677, 101.4477793],
     "Rumbai Pesisir": [-0.6079579, 101.5020752],
     "Rumbai": [-0.6453205, 101.4112049],
-    "Lima Puluh": [-0.2490762	, 100.6120232],
+    "Lima Puluh": [-0.2490762, 100.6120232],
     "Sail": [-0.5176177, 101.4594696],
     "Bukit Raya": [-0.4689961, 101.4679893],
     "Marpoyan Damai": [-0.4736702, 101.4395931],
@@ -99,6 +99,12 @@ if uploaded_file is not None:
                 color=color_map.get(row['Prediksi Risiko DBD'], 'blue'),
                 fill=True,
                 fill_opacity=0.7
+            ).add_to(m)
+            folium.Marker(
+                location=[row['latitude'], row['longitude']],
+                icon=folium.DivIcon(html=f"""
+                    <div style='font-size: 10pt; color: black'><b>{row['kecamatan']}</b></div>
+                """),
             ).add_to(m)
 
         st_data = st_folium(m, width=800, height=500)
