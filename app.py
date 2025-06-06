@@ -65,11 +65,41 @@ if uploaded_file is not None:
 
         def rekomendasi(label):
             if label == 'Tinggi':
-                return 'Lakukan fogging massal, aktifkan posko siaga DBD, dan edukasi intensif berbasis RT/RW.'
+                return """Fogging Massal Terjadwal: Lakukan pengasapan minimal dua kali seminggu di seluruh area kecamatan dengan pengawasan oleh Dinas Kesehatan.
+
+Peningkatan Pemberantasan Sarang Nyamuk (PSN): Dorong masyarakat untuk melakukan 3M Plus secara kolektif.
+
+Posko Tanggap DBD: Bentuk tim siaga RT/RW dengan pelaporan kasus gejala demam tinggi dalam 24 jam.
+
+Edukasi Intensif: Laksanakan penyuluhan door-to-door dan media sosial dengan pesan kunci seputar gejala, pencegahan, dan penanganan dini.
+
+Pemeriksaan Jentik Berkala: Lakukan oleh kader Jumantik dan petugas Puskesmas minimal dua kali per bulan.
+
+Skrining Kesehatan Sekolah: Wajibkan inspeksi jentik dan distribusi brosur edukasi DBD di sekolah-sekolah.
+
+Koordinasi Lintas Sektor: Libatkan Lurah, Babinsa, dan tokoh masyarakat untuk gerakan pembersihan masif tiap akhir pekan."""
             elif label == 'Sedang':
-                return 'Lakukan pemantauan wilayah rawan, penguatan edukasi sekolah dan penyuluhan warga.'
+                return """Fogging Selektif: Lakukan pengasapan di lokasi dengan kasus baru atau potensi genangan.
+
+Penguatan Edukasi RT/RW: Distribusi leaflet dan penyuluhan tentang pencegahan mandiri dan deteksi dini.
+
+Pemantauan TPS Liar: Lakukan inspeksi lokasi pembuangan sampah sembarangan dan rencanakan penutupan/pemindahan.
+
+Monitoring Genangan Air: Evaluasi sistem drainase dan upaya membersihkan saluran tersumbat.
+
+Surveilans Aktif: Optimalkan pencatatan dan pelaporan dari Puskesmas dan rumah sakit.
+
+Kolaborasi dengan Sekolah: Promosikan lomba kebersihan lingkungan dan pemantauan jentik di kelas."""
             else:
-                return 'Lanjutkan monitoring berkala, evaluasi lingkungan, dan edukasi ringan berbasis komunitas.'
+                return """Monitoring Berkala: Pertahankan kegiatan Jumantik mingguan dan pelaporan digital bila tersedia.
+
+Kampanye Preventif Ringan: Gunakan media komunitas dan masjid untuk mengingatkan pentingnya pencegahan DBD.
+
+Survei Kesiapsiagaan Komunitas: Evaluasi kesiapan warga dan kader jika terjadi lonjakan kasus.
+
+Evaluasi Infrastruktur: Pastikan tidak ada potensi TPS liar baru atau aliran air tersumbat yang bisa menjadi tempat nyamuk berkembang.
+
+Penguatan Komunikasi Risiko: Sediakan papan informasi risiko DBD di kantor kelurahan dan puskesmas."""
 
         df['Rekomendasi'] = df['Prediksi Risiko DBD'].apply(rekomendasi)
 
@@ -79,21 +109,21 @@ if uploaded_file is not None:
         output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
-        st.subheader("Ringkasan Prediksi Risiko DBD per Kecamatan")
-        for _, row in output.iterrows():
-            with st.expander(f"{row['kecamatan']} — Risiko: {row['Prediksi Risiko DBD']}"):
-                st.markdown(f"""
-                **Rekomendasi Intervensi:**
-                {row['Rekomendasi']}
+        with st.expander("Ringkasan Prediksi Risiko DBD per Kecamatan"):
+            for _, row in output.iterrows():
+                with st.expander(f"{row['kecamatan']} — Risiko: {row['Prediksi Risiko DBD']}"):
+                    st.markdown(f"""
+                    **Rekomendasi Intervensi:**
+                    {row['Rekomendasi']}
 
-                **Detail Data:**
-                - Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}
-                - Curah Hujan: {df.loc[_,'curah_hujan']} mm
-                - Suhu Rata-rata: {df.loc[_,'suhu_rata_rata']} °C
-                - Genangan Air: {df.loc[_,'jumlah_genangan_air']}
-                - Pengangguran: {df.loc[_,'pengangguran']} %
-                - Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata
-                """)
+                    **Detail Data:**
+                    - Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}
+                    - Curah Hujan: {df.loc[_,'curah_hujan']} mm
+                    - Suhu Rata-rata: {df.loc[_,'suhu_rata_rata']} °C
+                    - Genangan Air: {df.loc[_,'jumlah_genangan_air']}
+                    - Pengangguran: {df.loc[_,'pengangguran']} %
+                    - Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata
+                    """)
 
         st.subheader("Visualisasi Peta Risiko DBD")
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
