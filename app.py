@@ -33,12 +33,10 @@ kecamatan_coords = {
 # STREAMLIT UI
 # ================================
 st.set_page_config(page_title="Prediksi Risiko DBD", layout="wide")
-st.title("Dashboard Prediksi Risiko DBD Berbasis Machine Learning")
-
 st.markdown("""
-Alat bantu ini dirancang untuk mendeteksi tingkat risiko DBD berdasarkan data lingkungan, cuaca, dan sosial per wilayah.
-Silakan unggah data dalam format **.csv**.
-""")
+    <h1 style='color:#0056b3;'>📊 Dashboard Prediksi Risiko DBD Berbasis Machine Learning</h1>
+    <p style='font-size:16px'>Alat bantu ini dirancang untuk mendeteksi tingkat risiko DBD berdasarkan data lingkungan, cuaca, dan sosial per wilayah. Silakan unggah data dalam format <b>.csv</b>.</p>
+""", unsafe_allow_html=True)
 
 # ================================
 # UPLOAD DATA
@@ -47,7 +45,7 @@ uploaded_file = st.file_uploader("Unggah file CSV", type=["CSV"])
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
-    st.subheader("Data yang Diupload")
+    st.subheader("📂 Data yang Diupload")
     st.dataframe(df.head())
 
     fitur = [
@@ -63,7 +61,6 @@ if uploaded_file is not None:
         prediksi_label = le.inverse_transform(prediksi)
         df['Prediksi Risiko DBD'] = prediksi_label
 
-        # Simpan dataframe prediksi awal (tanpa kolom rekomendasi)
         df_prediksi_only = df[['kecamatan', 'Prediksi Risiko DBD']].copy()
 
         def rekomendasi(label):
@@ -102,22 +99,22 @@ if uploaded_file is not None:
         output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
-        st.subheader("Tabel Prediksi Risiko DBD")
+        st.subheader("📌 Tabel Prediksi Risiko DBD")
         st.dataframe(df_prediksi_only)
 
-        with st.expander("Rekomendasi Tindakan Berdasarkan Tingkat Risiko DBD Per Kecamatan"):
+        with st.expander("📋 Rekomendasi Tindakan Berdasarkan Tingkat Risiko DBD Per Kecamatan"):
             for _, row in output.iterrows():
                 warna = {
-                    'Tinggi': 'red',
-                    'Sedang': 'orange',
-                    'Rendah': 'green'
+                    'Tinggi': '#d9534f',
+                    'Sedang': '#f0ad4e',
+                    'Rendah': '#5cb85c'
                 }.get(row['Prediksi Risiko DBD'], 'gray')
 
                 st.markdown(f"""
                 <details>
-                <summary><strong>{row['kecamatan']} — Risiko: <span style='color:{warna}'>{row['Prediksi Risiko DBD']}</span></strong></summary>
-                <div style='padding: 0.5rem 1rem; font-size: 0.9rem;'>
-                    <b>Detail Data:</b>
+                <summary><strong>{row['kecamatan']} — Risiko: <span style='color:{warna}; font-weight:bold'>{row['Prediksi Risiko DBD']}</span></strong></summary>
+                <div style='background-color:#f9f9f9; padding: 0.7rem 1rem; border-left: 5px solid {warna}; border-radius: 6px; margin-top: 0.5rem'>
+                    <b>🧾 Detail Data:</b>
                     <ul>
                         <li>Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}</li>
                         <li>Curah Hujan: {df.loc[_,'curah_hujan']} mm</li>
@@ -126,7 +123,7 @@ if uploaded_file is not None:
                         <li>Pengangguran: {df.loc[_,'pengangguran']} %</li>
                         <li>Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata</li>
                     </ul>
-                    <b>Rekomendasi Tindakan:</b>
+                    <b>📌 Rekomendasi Tindakan:</b>
                     <ol>
                         {''.join([f'<li>{s}</li>' for s in row['Rekomendasi']])}
                     </ol>
@@ -134,7 +131,7 @@ if uploaded_file is not None:
                 </details>
                 """, unsafe_allow_html=True)
 
-        st.subheader("Visualisasi Peta Risiko DBD")
+        st.markdown("### 🗺️ Visualisasi Peta Risiko DBD")
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
 
         color_map = {
