@@ -1,22 +1,20 @@
 import streamlit as st
-st.set_page_config(page_title="Dengue Risk Prediction", layout="wide")
-
 import pandas as pd
 import joblib
 import folium
 from streamlit_folium import st_folium
 
 # ================================
-# LOAD MODEL & PREPROCESSORS
+# LOAD MODEL & PREPROCESSOR
 # ================================
 model = joblib.load("model_stacking_dbd.pkl")
 scaler = joblib.load("scaler_dbd.pkl")
 le = joblib.load("label_encoder_dbd.pkl")
 
 # ================================
-# DEFAULT COORDINATES PER DISTRICT
+# KOORDINAT DEFAULT PER KECAMATAN
 # ================================
-district_coords = {
+kecamatan_coords = {
     "Sukajadi": [-0.5176592, 101.4367539],
     "Senapelan": [-0.5361938, 101.4367539],
     "Pekanbaru Kota": [-0.5070677, 101.4477793],
@@ -34,128 +32,127 @@ district_coords = {
 # ================================
 # STREAMLIT UI
 # ================================
+st.set_page_config(page_title="Prediksi Risiko DBD", layout="wide")
 st.markdown("""
-    <h1 style='color:#0056b3;'>📊 Machine Learning-Based Dengue Risk Prediction Dashboard</h1>
-    <p style='font-size:16px'>This tool helps detect dengue risk levels based on environmental, weather, and social indicators by district. Please upload data in <b>.csv</b> format.</p>
+    <h1 style='color:#0056b3;'>📊 Dashboard Prediksi Risiko DBD Berbasis Machine Learning</h1>
+    <p style='font-size:16px'>Alat bantu ini dirancang untuk mendeteksi tingkat risiko DBD berdasarkan data lingkungan, cuaca, dan sosial per wilayah. Silakan unggah data dalam format <b>.csv</b>.</p>
 """, unsafe_allow_html=True)
 
 # ================================
-# UPLOAD CSV
+# UPLOAD DATA
 # ================================
-uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
+uploaded_file = st.file_uploader("Unggah file CSV", type=["CSV"])
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
-    st.subheader("📂 Uploaded Data Preview")
+    st.subheader("📂 Data yang Diupload")
     st.dataframe(df.head())
 
-    features = [
-        'dengue_cases', 'rainfall', 'illegal_dump_sites',
-        'avg_temperature', 'fogging_events', 'water_puddles',
-        'humidity', 'unemployment_rate', 'education_years'
+    fitur = [
+        'jumlah_kasus_dbd', 'curah_hujan', 'jumlah_tps_liar',
+        'suhu_rata_rata', 'jumlah_fogging', 'jumlah_genangan_air',
+        'kelembaban', 'pengangguran', 'tingkat_pendidikan'
     ]
 
     try:
-        X = df[features]
+        X = df[fitur]
         X_scaled = scaler.transform(X)
-        preds = model.predict(X_scaled)
-        preds_label = le.inverse_transform(preds)
+        prediksi = model.predict(X_scaled)
+        prediksi_label = le.inverse_transform(prediksi)
+        df['Prediksi Risiko DBD'] = prediksi_label
 
-        # Convert model labels from Bahasa to English
-        label_map = {'Tinggi': 'High', 'Sedang': 'Moderate', 'Rendah': 'Low'}
-        df['Dengue Risk Prediction'] = [label_map.get(lbl, lbl) for lbl in preds_label]
-        df_preds_only = df[['district', 'Dengue Risk Prediction']].copy()
+        df_prediksi_only = df[['kecamatan', 'Prediksi Risiko DBD']].copy()
 
-        def recommendation(label):
-            if label == 'High':
+        def rekomendasi(label):
+            if label == 'Tinggi':
                 return [
-                    "Scheduled Mass Fogging: At least twice a week across the district with health authority supervision.",
-                    "Enhanced Mosquito Nest Eradication (3M Plus) campaigns.",
-                    "Emergency Response Posts in neighborhoods with 24-hour symptom reporting.",
-                    "Intensive door-to-door and social media awareness.",
-                    "Regular larval inspections twice a month by health volunteers.",
-                    "School health inspections and educational materials distribution.",
-                    "Cross-sector weekend cleaning involving local leaders and communities."
+                    "Fogging Massal Terjadwal: Lakukan pengasapan minimal dua kali seminggu di seluruh area kecamatan dengan pengawasan oleh Dinas Kesehatan.",
+                    "Peningkatan Pemberantasan Sarang Nyamuk (PSN): Dorong masyarakat untuk melakukan 3M Plus secara kolektif.",
+                    "Posko Tanggap DBD: Bentuk tim siaga RT/RW dengan pelaporan kasus gejala demam tinggi dalam 24 jam.",
+                    "Edukasi Intensif: Laksanakan penyuluhan door-to-door dan media sosial dengan pesan kunci seputar gejala, pencegahan, dan penanganan dini.",
+                    "Pemeriksaan Jentik Berkala: Lakukan oleh kader Jumantik dan petugas Puskesmas minimal dua kali per bulan.",
+                    "Skrining Kesehatan Sekolah: Wajibkan inspeksi jentik dan distribusi brosur edukasi DBD di sekolah-sekolah.",
+                    "Koordinasi Lintas Sektor: Libatkan Lurah, Babinsa, dan tokoh masyarakat untuk gerakan pembersihan masif tiap akhir pekan."
                 ]
-            elif label == 'Moderate':
+            elif label == 'Sedang':
                 return [
-                    "Selective fogging in recent case areas or with standing water.",
-                    "Community awareness campaigns and leaflet distribution.",
-                    "Inspection and management of illegal waste sites.",
-                    "Drainage system inspections to prevent stagnant water.",
-                    "Optimize case reporting from health centers.",
-                    "School competitions on cleanliness and larval checks."
+                    "Fogging Selektif: Lakukan pengasapan di lokasi dengan kasus baru atau potensi genangan.",
+                    "Penguatan Edukasi RT/RW: Distribusi leaflet dan penyuluhan tentang pencegahan mandiri dan deteksi dini.",
+                    "Pemantauan TPS Liar: Lakukan inspeksi lokasi pembuangan sampah sembarangan dan rencanakan penutupan/pemindahan.",
+                    "Monitoring Genangan Air: Evaluasi sistem drainase dan upaya membersihkan saluran tersumbat.",
+                    "Surveilans Aktif: Optimalkan pencatatan dan pelaporan dari Puskesmas dan rumah sakit.",
+                    "Kolaborasi dengan Sekolah: Promosikan lomba kebersihan lingkungan dan pemantauan jentik di kelas."
                 ]
             else:
                 return [
-                    "Routine mosquito monitoring by community volunteers.",
-                    "Light educational campaigns via community media.",
-                    "Assess community readiness for potential outbreaks.",
-                    "Ensure no new illegal dumping or blocked water flow.",
-                    "Display dengue risk info boards at community centers."
+                    "Monitoring Berkala: Pertahankan kegiatan Jumantik mingguan dan pelaporan digital bila tersedia.",
+                    "Kampanye Preventif Ringan: Gunakan media komunitas dan masjid untuk mengingatkan pentingnya pencegahan DBD.",
+                    "Survei Kesiapsiagaan Komunitas: Evaluasi kesiapan warga dan kader jika terjadi lonjakan kasus.",
+                    "Evaluasi Infrastruktur: Pastikan tidak ada potensi TPS liar baru atau aliran air tersumbat yang bisa menjadi tempat nyamuk berkembang.",
+                    "Penguatan Komunikasi Risiko: Sediakan papan informasi risiko DBD di kantor kelurahan dan puskesmas."
                 ]
 
-        df['Recommendations'] = df['Dengue Risk Prediction'].apply(recommendation)
-        df['latitude'] = df['district'].map(lambda x: district_coords.get(x, [0, 0])[0])
-        df['longitude'] = df['district'].map(lambda x: district_coords.get(x, [0, 0])[1])
+        df['Rekomendasi'] = df['Prediksi Risiko DBD'].apply(rekomendasi)
+        df['latitude'] = df['kecamatan'].map(lambda x: kecamatan_coords.get(x, [0, 0])[0])
+        df['longitude'] = df['kecamatan'].map(lambda x: kecamatan_coords.get(x, [0, 0])[1])
 
-        output = df[['district', 'latitude', 'longitude', 'Dengue Risk Prediction', 'Recommendations']].copy()
+        output = df[['kecamatan', 'latitude', 'longitude', 'Prediksi Risiko DBD', 'Rekomendasi']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
-        st.subheader("📌 Dengue Risk Prediction Table")
-        st.dataframe(df_preds_only)
+        st.subheader("📌 Tabel Prediksi Risiko DBD")
+        st.dataframe(df_prediksi_only)
 
-        with st.expander("📋 Recommendations Based on Risk Level per District"):
+        with st.expander("📋 Rekomendasi Tindakan Berdasarkan Tingkat Risiko DBD Per Kecamatan"):
             for _, row in output.iterrows():
-                color = {
-                    'High': '#d9534f',
-                    'Moderate': '#f0ad4e',
-                    'Low': '#5cb85c'
-                }.get(row['Dengue Risk Prediction'], 'gray')
+                warna = {
+                    'Tinggi': '#d9534f',
+                    'Sedang': '#f0ad4e',
+                    'Rendah': '#5cb85c'
+                }.get(row['Prediksi Risiko DBD'], 'gray')
 
                 st.markdown(f"""
                 <details>
-                <summary><strong>{row['district']} — Risk Level: <span style='color:{color}; font-weight:bold'>{row['Dengue Risk Prediction']}</span></strong></summary>
-                <div style='background-color:#f9f9f9; padding: 0.7rem 1rem; border-left: 5px solid {color}; border-radius: 6px; margin-top: 0.5rem'>
-                    <b>🧾 Data Summary:</b>
+                <summary><strong>{row['kecamatan']} — Risiko: <span style='color:{warna}; font-weight:bold'>{row['Prediksi Risiko DBD']}</span></strong></summary>
+                <div style='background-color:#f9f9f9; padding: 0.7rem 1rem; border-left: 5px solid {warna}; border-radius: 6px; margin-top: 0.5rem'>
+                    <b>🧾 Detail Data:</b>
                     <ul>
-                        <li>Dengue Cases: {df.loc[_,'dengue_cases']}</li>
-                        <li>Rainfall: {df.loc[_,'rainfall']} mm</li>
-                        <li>Average Temperature: {df.loc[_,'avg_temperature']} °C</li>
-                        <li>Water Puddles: {df.loc[_,'water_puddles']}</li>
-                        <li>Unemployment Rate: {df.loc[_,'unemployment_rate']} %</li>
-                        <li>Education Level: {df.loc[_,'education_years']} yrs</li>
+                        <li>Jumlah Kasus DBD: {df.loc[_,'jumlah_kasus_dbd']}</li>
+                        <li>Curah Hujan: {df.loc[_,'curah_hujan']} mm</li>
+                        <li>Suhu Rata-rata: {df.loc[_,'suhu_rata_rata']} °C</li>
+                        <li>Genangan Air: {df.loc[_,'jumlah_genangan_air']}</li>
+                        <li>Pengangguran: {df.loc[_,'pengangguran']} %</li>
+                        <li>Pendidikan: {df.loc[_,'tingkat_pendidikan']} tahun rata-rata</li>
                     </ul>
-                    <b>📌 Recommended Actions:</b>
+                    <b>📌 Rekomendasi Tindakan:</b>
                     <ol>
-                        {''.join([f'<li>{s}</li>' for s in row['Recommendations']])}
+                        {''.join([f'<li>{s}</li>' for s in row['Rekomendasi']])}
                     </ol>
                 </div>
                 </details>
                 """, unsafe_allow_html=True)
 
-        st.markdown("### 🗺️ Dengue Risk Map Visualization")
+        st.markdown("### 🗺️ Visualisasi Peta Risiko DBD")
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
 
         color_map = {
-            'Low': 'green',
-            'Moderate': 'orange',
-            'High': 'red'
+            'Rendah': 'green',
+            'Sedang': 'orange',
+            'Tinggi': 'red'
         }
 
         for _, row in output.iterrows():
             folium.CircleMarker(
                 location=[row['latitude'], row['longitude']],
                 radius=8,
-                popup=f"{row['district']}\nRisk: {row['Dengue Risk Prediction']}\n{'; '.join(row['Recommendations'])}",
-                color=color_map.get(row['Dengue Risk Prediction'], 'blue'),
+                popup=f"{row['kecamatan']}\nRisiko: {row['Prediksi Risiko DBD']}\n{'; '.join(row['Rekomendasi'])}",
+                color=color_map.get(row['Prediksi Risiko DBD'], 'blue'),
                 fill=True,
                 fill_opacity=0.7
             ).add_to(m)
             folium.Marker(
                 location=[row['latitude'], row['longitude']],
                 icon=folium.DivIcon(html=f"""
-                    <div style='font-size: 10pt; color: black'><b>{row['district']}</b></div>
+                    <div style='font-size: 10pt; color: black'><b>{row['kecamatan']}</b></div>
                 """),
             ).add_to(m)
 
@@ -163,16 +160,16 @@ if uploaded_file is not None:
 
         csv = output.drop(columns=['latitude', 'longitude']).to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="📥 Download Prediction Results (CSV)",
+            label="📥 Unduh Hasil Prediksi (CSV)",
             data=csv,
-            file_name="dengue_risk_predictions.csv",
+            file_name="hasil_prediksi_risiko_dbd.csv",
             mime="text/csv",
         )
 
     except KeyError:
-        st.error("Missing or incorrect columns. Ensure your CSV includes: 'district' and all required model features.")
-        st.markdown("### Required Columns:")
-        st.code(", ".join(features + ['district']))
+        st.error("Kolom pada file CSV tidak sesuai. Pastikan menyertakan kolom: kecamatan dan fitur model.")
+        st.markdown("### Kolom yang diperlukan:")
+        st.code(", ".join(fitur + ['kecamatan']))
 
 else:
-    st.info("Please upload data to begin dengue risk prediction.")
+    st.info("Silakan unggah data untuk memulai prediksi.")
