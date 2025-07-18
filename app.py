@@ -34,8 +34,8 @@ kecamatan_coords = {
 # ================================
 st.set_page_config(page_title="Dengue Risk Prediction", layout="wide")
 st.markdown("""
-    <h1 style='color:#0056b3;'>📊 Dengue Risk Prediction Dashboard (DBD)</h1>
-    <p style='font-size:16px'>This tool is designed to detect dengue risk levels based on environmental, weather, and social data per district. Please upload a <b>.csv</b> file.</p>
+    <h1 style='color:#0056b3;'>📊 Dengue Risk Prediction Dashboard</h1>
+    <p style='font-size:16px'>This tool is designed to assess the risk of Dengue outbreaks based on environmental, weather, and social data per district. Please upload a <b>.csv</b> file.</p>
 """, unsafe_allow_html=True)
 
 # ================================
@@ -46,7 +46,7 @@ uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
 
-    # Create alias display for English column names
+    # Column alias for display
     column_aliases = {
         'tanggal': 'Date',
         'kecamatan': 'District',
@@ -82,8 +82,17 @@ if uploaded_file is not None:
         prediksi_label = le.inverse_transform(prediksi)
         df['Dengue Risk Prediction'] = prediksi_label
 
-        df_prediksi_only = df[['kecamatan', 'Dengue Risk Prediction']].copy()
-        df_prediksi_only.rename(columns={'kecamatan': 'District'}, inplace=True)
+        # Map Indonesian labels to English
+        risk_label_map = {
+            'Tinggi': 'High',
+            'Sedang': 'Medium',
+            'Rendah': 'Low'
+        }
+        df['Risk Level (EN)'] = df['Dengue Risk Prediction'].map(risk_label_map)
+
+        # Display table with English column names
+        df_prediksi_only = df[['kecamatan', 'Risk Level (EN)']].copy()
+        df_prediksi_only.rename(columns={'kecamatan': 'District', 'Risk Level (EN)': 'Dengue Risk Prediction'}, inplace=True)
 
         def recommendations(label):
             if label == 'Tinggi':
@@ -118,7 +127,7 @@ if uploaded_file is not None:
         df['latitude'] = df['kecamatan'].map(lambda x: kecamatan_coords.get(x, [0, 0])[0])
         df['longitude'] = df['kecamatan'].map(lambda x: kecamatan_coords.get(x, [0, 0])[1])
 
-        output = df[['kecamatan', 'latitude', 'longitude', 'Dengue Risk Prediction', 'Recommendations']].copy()
+        output = df[['kecamatan', 'latitude', 'longitude', 'Risk Level (EN)', 'Recommendations']].copy()
         output.insert(0, 'No', range(1, len(output) + 1))
 
         st.subheader("📌 Dengue Risk Level Prediction Table")
@@ -127,14 +136,14 @@ if uploaded_file is not None:
         with st.expander("📋 Actionable Recommendations Based on Dengue Risk Level"):
             for _, row in output.iterrows():
                 color = {
-                    'Tinggi': '#d9534f',
-                    'Sedang': '#f0ad4e',
-                    'Rendah': '#5cb85c'
-                }.get(row['Dengue Risk Prediction'], 'gray')
+                    'High': '#d9534f',
+                    'Medium': '#f0ad4e',
+                    'Low': '#5cb85c'
+                }.get(row['Risk Level (EN)'], 'gray')
 
                 st.markdown(f"""
                 <details>
-                <summary><strong>{row['kecamatan']} — Risk Level: <span style='color:{color}; font-weight:bold'>{row['Dengue Risk Prediction']}</span></strong></summary>
+                <summary><strong>{row['kecamatan']} — Risk Level: <span style='color:{color}; font-weight:bold'>{row['Risk Level (EN)']}</span></strong></summary>
                 <div style='background-color:#f9f9f9; padding: 0.7rem 1rem; border-left: 5px solid {color}; border-radius: 6px; margin-top: 0.5rem'>
                     <b>🧾 Data Details:</b>
                     <ul>
@@ -157,17 +166,17 @@ if uploaded_file is not None:
         m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=11)
 
         color_map = {
-            'Rendah': 'green',
-            'Sedang': 'orange',
-            'Tinggi': 'red'
+            'Low': 'green',
+            'Medium': 'orange',
+            'High': 'red'
         }
 
         for _, row in output.iterrows():
             folium.CircleMarker(
                 location=[row['latitude'], row['longitude']],
                 radius=8,
-                popup=f"{row['kecamatan']}\nRisk: {row['Dengue Risk Prediction']}\n{'; '.join(row['Recommendations'])}",
-                color=color_map.get(row['Dengue Risk Prediction'], 'blue'),
+                popup=f"{row['kecamatan']}\nRisk: {row['Risk Level (EN)']}\n{'; '.join(row['Recommendations'])}",
+                color=color_map.get(row['Risk Level (EN)'], 'blue'),
                 fill=True,
                 fill_opacity=0.7
             ).add_to(m)
@@ -180,7 +189,10 @@ if uploaded_file is not None:
 
         st_folium(m, width=800, height=500)
 
-        csv = output.drop(columns=['latitude', 'longitude']).to_csv(index=False).encode('utf-8')
+        csv = output.drop(columns=['latitude', 'longitude']).rename(
+            columns={'kecamatan': 'District', 'Risk Level (EN)': 'Dengue Risk Prediction'}
+        ).to_csv(index=False).encode('utf-8')
+
         st.download_button(
             label="📥 Download Prediction Results (CSV)",
             data=csv,
